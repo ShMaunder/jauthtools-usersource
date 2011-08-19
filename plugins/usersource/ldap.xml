@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<install version="1.5" type="plugin"  group="usersource">
+	<name>User Source - LDAP</name>
+	<author>Sam Moffatt</author>
+	<creationDate>April 2007</creationDate>
+	<copyright>(C) 2009 Sam Moffatt. All rights reserved.</copyright>
+	<license>http://www.gnu.org/copyleft/gpl.html GNU/GPL</license>
+	<authorEmail>pasamio@gmail.com</authorEmail>
+	<authorUrl>http://sammoffatt.com.au/</authorUrl>
+	<version>1.5.5</version>
+	<update>http://www.jsitepoint.com/update/plugins/plgusersourceldap</update>
+	<description>Retrieves users from an LDAP directory</description>
+	<files>
+		<filename plugin="ldap">ldap.php</filename>
+	</files>
+	<params>
+		<!-- LDAP Specific Details -->
+		<param name="ldap_blocked" type="text" size="20" default="loginDisabled" label="Map User Blocked" description="LDAP Attribute to map blocked users" />
+		<param name="ldap_groups" type="text" size="20" default="groupMembership" label="Map User Groups" description="LDAP Attribute to map users groups" />
+		<param name="ldap_groupmember" type="text" size="20" default="member" label="Map Group Members" description="The attribute in LDAP storing the member of a given group. This is used by the group mapping system in reverse." />
+		<param name="groupMap" type="textarea" cols="100" rows="10" default="" label="Group Map" description="Maps LDAP Groups to Joomla! Groups" />
+		<!--  Group Mapping Details -->
+		<param name="defaultgroup" type="list" default="frontend" label="Default Group" description="The default group to autocreate users in.">
+			<option value="frontend">Frontend User</option>
+			<option value="registered">Registered</option>
+			<option value="author">Author</option>
+			<option value="editor">Editor</option>
+		</param>
+		<param name="reversegroupmembership" type="radio" default="0" label="Use reverse group membership" description="Look at the group to find if the user is a member instead of looking at the user; use for Apache DS or environments that may not have dynamic attributes">
+			<option value="0">No</option>
+			<option value="1">Yes</option>
+		</param>
+		<param name="authenticategroupsearch" type="radio" default="0" label="Authenticate Group Search" description="Use the connect username and password to login before doing a reverse group search">
+			<option value="0">No</option>
+			<option value="1">Yes</option>
+		</param>
+		<param name="recursivegroupmembership" type="radio" default="0" label="Use recursive group membership" description="Uses the users existing group memberships to recurse up the tree to include its potential parent groups. Useful in Microsoft Active Directory's nested group structure.">
+			<option value="0">No</option>
+			<option value="1">Yes</option>
+		</param>		
+		<!-- Internationalisation Support -->
+		<param name="use_iconv" type="radio" default="0" label="Use iconv" description="iconv is required to convert some fields into UTF-8 that is stored in the database. You will need iconv installed (See System -> System Info -> PHP Info) or this will error">
+			<option value="0">No</option>
+			<option value="1">Yes</option>
+		</param>
+		<param name="iconv_from" default="ISO8859-1" type="text" size="10" label="Original Encoding (e.g. ISO8859-1)" description="This is the encoding used in your LDAP directory." />
+		<param name="iconv_to" default="UTF-8" type="text" size="10" label="Target Encoding (e.g. your database)" description="This is the encoding used in your database server (e.g. MySQL, typically UTF-8)" />		
+	</params>
+</install>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE install SYSTEM "/home/moffats/public_html/eclipse-remote/jinstallmanager/resources/plugin-install.dtd" >
+<install group="system" type="plugin" version="1.5.0">
+  <name>System - JAuthTools Synchronization Plugin</name>
+  <creationDate>26-Jul-2007</creationDate>
+  <author>Sam Moffatt</author>
+  <authorEmail>pasamio@pasamio.id.au</authorEmail>
+  <authorUrl>http://pasamio.id.au</authorUrl>
+  <copyright>2007 (C) Sam Moffatt</copyright>
+  <license>GNU/GPL</license>
+  <version>1.5.5</version>
+  <description>JAuthTools Synchronization utilizes user source plugins to update user details</description>
+  <files>
+    <filename plugin="sync">sync.php</filename>
+  </files>
+  <params>
+  		<param name="demoteuser" type="radio" default="1" label="Demote Users" description="Demote users if their group mapping or default user settings are different.">
+			<option value="0">No</option>
+			<option value="1">Yes</option>
+		</param>
+  </params>
+  <update>http://www.jsitepoint.com/update/plugins/plgsystemsync</update>
+</install>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension version="1.6" type="plugin"  group="usersource">
+	<name>User Source - Session</name>
+	<author>Sam Moffatt</author>
+	<creationDate>November 2010</creationDate>
+	<copyright>(C) 2010 Sam Moffatt. All rights reserved.</copyright>
+	<license>http://www.gnu.org/copyleft/gpl.html GNU/GPL</license>
+	<authorEmail>pasamio@gmail.com</authorEmail>
+	<authorUrl>http://sammoffatt.com.au/</authorUrl>
+	<version>1.6.0</version>
+	<update>http://www.jsitepoint.com/update/plugins/plgusersourcesession</update>
+	<description>Grabs users details from the session, typically provided by the SSO plugin</description>
+	<files>
+		<filename plugin="session">session.php</filename>
+	</files>
+	<config />
+</extension>

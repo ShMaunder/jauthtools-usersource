@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE install SYSTEM "/home/moffats/public_html/eclipse-remote/jinstallmanager/resources/library-install.dtd" >
+<install type="library" version="1.5">
+	<name>JAuthTools User Sources Library</name>
+	<libraryname>jauthtools</libraryname> 
+	<url>http://sammoffatt.com.au/jauthtools</url>
+	<description>This library provides User Sources support for Joomla! 1.5</description>
+	<packager>Sam Moffatt</packager>
+	<packagerurl>http://sammoffatt.com.au/</packagerurl>
+	<update>http://www.jsitepoint.com/update/libraries/lib_jauthtools_usersource</update>
+	<version>1.5.5</version>
+	<files>
+		<file>usersource.php</file>
+	</files>
+</install>
