@@ -1,17 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<extension version="1.6" type="plugin"  group="usersource">
+<extension version="2.5" type="plugin" group="usersource" method="upgrade">
 	<name>User Source - Session</name>
 	<author>Sam Moffatt</author>
 	<creationDate>November 2010</creationDate>
-	<copyright>(C) 2010 Sam Moffatt. All rights reserved.</copyright>
+	<copyright>(C) 2012 Sam Moffatt. All rights reserved.</copyright>
 	<license>http://www.gnu.org/copyleft/gpl.html GNU/GPL</license>
 	<authorEmail>pasamio@gmail.com</authorEmail>
 	<authorUrl>http://sammoffatt.com.au/</authorUrl>
-	<version>1.6.0</version>
+	<version>2.5.0</version>
 	<update>http://www.jsitepoint.com/update/plugins/plgusersourcesession</update>
 	<description>Grabs users details from the session, typically provided by the SSO plugin</description>
 	<files>
 		<filename plugin="session">session.php</filename>
 	</files>
-	<config />
+	<config>
+		<fields name="params">
+			<fieldset name="basic" label="Basic">
+				<!--  Group Mapping Details -->
+				<field name="defaultgroup" type="sql" default="2" label="Default Group" description="The default group to autocreate users in."
+				       query="select title defaultgroup, id value from #__usergroups ORDER BY lft" />
+			</fieldset>
+		</fields>
+	</config>
 </extension>

@@ -12,28 +12,35 @@
  *  
  * Created on July 3, 2008
  * 
- * @package Joomla! Authentication Tools
- * @author Sam Moffatt <pasamio@gmail.com>
- * @license GNU/GPL http://www.gnu.org/licenses/gpl.html
- * @copyright 2009 Sam Moffatt 
- * @version SVN: $Id:$
- * @see JoomlaCode Project: http://joomlacode.org/gf/project/jauthtools/
+ * @package     JAuthTools
+ * @subpackage  UserSource
+ * @author      Sam Moffatt <pasamio@gmail.com>
+ * @license     GNU/GPL http://www.gnu.org/licenses/gpl.html
+ * @copyright   2012 Sam Moffatt 
+ * @version     2.5.0 
+ * @see         JoomlaCode Project: http://joomlacode.org/gf/project/jauthtools/
  */
 
 jimport('joomla.event.plugin');
 
-
 /**
  * SSO Initiation
  * Kicks off SSO Authentication
+ *
+ * @package     JAuthTools
+ * @subpackage  UserSource
  */
 class plgUserSourceSession extends JPlugin {
 	/**
 	 * Retrieves a user
-	 * @param string username Username of target use
-	 * @return JUser object containing the valid user or false
+	 *
+	 * @param   string  $username  Username of target use
+	 *
+	 * @return  JUser  object containing the valid user or false
+	 *
+	 * @since   1.5
 	 */
-	function getUser($username,&$user) {
+	public function getUser($username,&$user) {
 		$session =& JFactory::getSession();
 		$details = $session->get('UserSourceDetails',null);
 		if($details) {
@@ -47,9 +54,7 @@ class plgUserSourceSession extends JPlugin {
 					$user->username = $detail->username;
 					$user->name = $detail->name;
 					$user->email = $detail->email;
-					// These two will be overriden in future
-					$user->gid = 18;
-			 	 	$user->usertype = 'Registered';
+					$user->groups = array(2);
 					return true;					
 				}
 			}
@@ -57,7 +62,16 @@ class plgUserSourceSession extends JPlugin {
 		return false;		
 	} 
 
-	function &doUserSync($username) {
+	/**
+	 * Handle user synchronisation for this plugin
+	 *
+	 * @param   string  $username  The username to sync.
+	 *
+	 * @return  JUser  The JUser from this sync.
+	 *
+	 * @since   1.5
+	 */
+	public function &doUserSync($username) {
 		return false;
 	}
 }
