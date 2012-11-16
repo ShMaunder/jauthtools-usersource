@@ -12,10 +12,12 @@
  * @subpackage  UserSource
  * @author      Sam Moffatt <pasamio@gmail.com>
  * @license     GNU/GPL http://www.gnu.org/licenses/gpl.html
- * @copyright   2012 Sam Moffatt
+ * @copyright   2009 - 2012 Sam Moffatt
  * @version     2.5.0
  * @see         JoomlaCode Project: http://joomlacode.org/gf/project/jauthtools/
  */
+
+defined('_JEXEC') or die();
 
 jimport('joomla.user.helper');
 jimport('joomla.utilities.string');
@@ -29,36 +31,46 @@ jimport('joomla.base.observable');
  */
 class JAuthUserSource extends JObservable
 {
-
-	/** @var options array options */
-	var $_options;
+	/** @var    array options
+	 *  @since  1.5
+	 */
+	protected $options;
 
 	/**
 	 * Constructor
 	 *
-	 * @access protected
+	 * @since  1.5
 	 */
-	function __construct($options = Array())
+	public function __construct($options = Array())
 	{
 		// Import User Source Library Files
-		$isLoaded = JPluginHelper :: importPlugin('usersource');
+		$isLoaded = JPluginHelper::importPlugin('usersource');
 		if (!$isLoaded)
 		{
-			JError :: raiseWarning('SOME_ERROR_CODE', 'JAuthUserSource::__construct: Could not load User Source plugins.');
+			JLog::add(__CLASS__ . '::__construct: Could not load User Source plugins.', JLog::ERROR, 'usersource');
 		}
-		$this->_options = $options;
+		$this->options = $options;
 	}
 
-	function doUserCreation($username)
+	/**
+	 * Handle creating a user account.
+	 *
+	 * @param   string  $username  The username to attempt to discover and create.
+	 *
+	 * @return  ??
+	 *
+	 * @since   1.5
+	 */
+	public function doUserCreation($username)
 	{
-		// Do not create user if they exist already
+		// Do not create user if they exist already.
 		if (intval(JUserHelper::getUserId($username)))
 		{
 			return true;
 		}
 
-		// Load up User Source plugins
-		$plugins = JPluginHelper :: getPlugin('usersource');
+		// Load up User Source plugins.
+		$plugins = JPluginHelper::getPlugin('usersource');
 		foreach ($plugins as $plugin)
 		{
 			$className = 'plg' . $plugin->type . $plugin->name;
@@ -68,7 +80,7 @@ class JAuthUserSource extends JObservable
 			}
 			else
 			{
-				JError :: raiseWarning('SOME_ERROR_CODE', 'JAuthUserSource::doUserCreation: Could not load ' . $className);
+				JLog::add(__CLASS__ . '::doUserCreation: Could not load ' . $className, JLog::INFO, 'usersource');
 				continue;
 			}
 		}
@@ -77,15 +89,22 @@ class JAuthUserSource extends JObservable
 		$user = $this->discoverUser($username);
 		if ($user)
 		{
-			$my = & JFactory::getUser(); // get who we are now
+			// Get who we are now.
+			$my = & JFactory::getUser(); 
 			$oldgid = $my->get('gid');
-			$my->set('gid', 25);   // and fake things to by pass security
-			$result = $user->save();  // save us, now the db is up
+
+			// And fake things to by pass security.
+			$my->set('gid', 25);   
+
+			// save us, now the db is up
+			$result = $user->save();  
 			if (!$result)
 			{
-				JError::raiseNotice(1, 'User creation failed: ' . $user->getError());
+				JLog::add(sprintf('User creation failed for %s: %s', $username, $user->getError()), JLog::ERROR, 'usersource');
 			}
-			$my->set('gid', $oldgid); // set back to old value
+
+			// Set back to old value.
+			$my->set('gid', $oldgid); 
 			return $result;
 			break;
 		}
