@@ -35,8 +35,9 @@ class plgUserSourceSession extends JPlugin {
 	 * Retrieves a user
 	 *
 	 * @param   string  $username  Username of target use
+	 * @param   JUser   &$user     Reference to user to populate
 	 *
-	 * @return  JUser  object containing the valid user or false
+	 * @return  JUser object containing the valid user or false
 	 *
 	 * @since   1.5
 	 */
@@ -48,6 +49,7 @@ class plgUserSourceSession extends JPlugin {
 			if(!is_array($details)) {
 				$details = Array($details); // wrap in array
 			}
+
 			foreach($details as $detail) {
 				if(is_object($detail) && $detail->username == $username) {
 					// These three should be set by the plugin

@@ -18,25 +18,24 @@
  * @see         JoomlaCode Project: http://joomlacode.org/gf/project/jauthtools/
  */
 jimport('joomla.plugin.plugin');
-jimport('joomla.client.ldap');
 
 /**
  * LDAP User Source
  * Finds people using LDAP
- * @package    JAuthTools
- * @subpackage UserSource
- * @version    2.5.0
+ *
+ * @package     JAuthTools
+ * @subpackage  UserSource
+ * @version     2.5.0
  */
 class plgUserSourceLDAP extends JPlugin
 {
-
 	/**
 	 * Retrieves a user
 	 *
-	 * @param   string   $username   Username of target use
-	 * @param   JUser    &$user      Reference to user to populate
+	 * @param   string  $username  Username of target use
+	 * @param   JUser   &$user     Reference to user to populate
 	 *
-	 * @return  JUser  object containing the valid user or false
+	 * @return  boolean  If user was successfully populated into &$user.
 	 *
 	 * @since   1.5
 	 */
@@ -60,7 +59,7 @@ class plgUserSourceLDAP extends JPlugin
 			return false;
 		}
 		$this->params = $params; // reset our internal params to include the merged values
-		$ldap = new JLDAP($params);
+		$ldap = new JClientLdap($params);
 		if (!$ldap->connect())
 		{
 			JError :: raiseWarning('SOME_ERROR_CODE', 'plgUserSourceLDAP::getUser: Failed to connect to LDAP Server ' . $params->getValue('host'));
@@ -77,7 +76,13 @@ class plgUserSourceLDAP extends JPlugin
 	}
 
 	/**
-	 * Synchronizes a user
+	 * Synchronizes a user.
+	 *
+	 * @param   string  $username  The username of the user to synchronise.
+	 *
+	 * @return  JUser  The user to be synchronised.
+	 *
+	 * @since   1.5
 	 */
 	function &doUserSync($username)
 	{
@@ -101,9 +106,8 @@ class plgUserSourceLDAP extends JPlugin
 			return false;
 		}
 		$this->params = $params; // reset our internal params to include the merged values
-		$ldap = new JLDAP($params);
+		$ldap = new JClientLdap($params);
 
-		$return = false;
 		if (!$ldap->connect())
 		{
 			JError :: raiseWarning('SOME_ERROR_CODE', 'plgUserSourceLDAP::doUserSync: Failed to connect to LDAP Server ' . $params->getValue('host'));
@@ -116,6 +120,7 @@ class plgUserSourceLDAP extends JPlugin
 			return false;
 		}
 
+		$return = false;
 		$user = new JUser();
 		$user->load(JUserHelper::getUserId($username));
 		if ($this->_updateUser($ldap, $username, $user))
