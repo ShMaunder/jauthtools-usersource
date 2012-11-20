@@ -87,14 +87,22 @@ class JAuthUserSource extends JObservable
 
 		// Try to find user
 		$user = $this->discoverUser($username);
+
 		if ($user)
 		{
-			// Get who we are now.
-			$my = & JFactory::getUser(); 
-			$oldgid = $my->get('gid');
+			$config = JFactory::getConfig();
 
-			// And fake things to by pass security.
-			$my->set('gid', 25);   
+			// If the plugin didn't assign a group, set the default.
+			// Note: "Public" doesn't have access to login...
+			if (!isset($user->groups) || empty($user->groups) || !count($user->groups))
+			{
+				$user->groups = array($config->get('access', 1));
+			}
+
+			// Get who we are now.
+			$originalUser = JFactory::getUser();
+			$session = JFactory::getSession();
+			$session->set('user', new SuperJUser);
 
 			// save us, now the db is up
 			$result = $user->save();  
@@ -104,29 +112,40 @@ class JAuthUserSource extends JObservable
 			}
 
 			// Set back to old value.
-			$my->set('gid', $oldgid); 
+			$session->set('user', $originalUser);
 			return $result;
-			break;
 		}
 		return false;
 	}
 
-	function doUserSynchronization($username)
+	/**
+	 * Handle synchronising a given usenname.
+	 *
+	 * @param   string   $username       The username to synchronise.
+	 * @param   boolean  $updateSession  Update the session with this user object.
+	 *
+	 * @return  boolean  If the user was synchronised or not.
+	 *
+	 * @since    1.5
+	 */
+	public function doUserSynchronization($username, $updateSession = true)
 	{
 		// Load up User Source plugins
 		$plugins = JPluginHelper :: getPlugin('usersource');
 		foreach ($plugins as $plugin)
 		{
 			$className = 'plg' . $plugin->type . $plugin->name;
+
 			if (class_exists($className))
 			{
 				$plugin = new $className($this, (array) $plugin);
 			}
 			else
 			{
-				JError :: raiseWarning('SOME_ERROR_CODE', 'JAuthUserSource::doUserSynchronization: Could not load ' . $className);
+				JLog::add('JAuthUserSource::doUserSynchronization: Could not load ' . $className, JLog::WARNING, 'usersource');
 				continue;
 			}
+
 			// Fire a user sync event; this is done poorly, we will fix this for 1.6
 			if (method_exists($plugin, 'doUserSync'))
 			{
@@ -142,8 +161,9 @@ class JAuthUserSource extends JObservable
 				// and no other system will overwrite the values
 				// but first we need to save our user
 				// get who we are now
-				$my = & JFactory::getUser();
-
+				$originalUser = clone(JFactory::getUser());
+				$my =& JFactory::getUser();
+				$my = new SuperJUser;
 
 				// by default we demote users
 				/*
@@ -155,46 +175,48 @@ class JAuthUserSource extends JObservable
 				}
 				*/
 
-				// grab the old "isRoot" value
-				$oldRoot = $my->get('isRoot');
-				$my->set('isRoot', true);
-
 				// save the record now that the checks are disabled
 				$result = $user->save();
 
-				// set back to old value
-				$my->set('isRoot', $oldRoot);
-
-				// Contribution from Mark Snead via the forums
-				// @see http://forum.joomla.org/viewtopic.php?p=1811943#p1811943
-				// UPDATE SESSION ARRAY
-				$instance = $my;
-
-				// Get an ACL object
-				$acl = & JFactory::getACL();
-
-				// Get the newly updated user group from the ACL
-				if ($instance->get('tmp_user') == 1)
+				if ($updateSession)
 				{
-					$grp = new JObject;
-					// This should be configurable at some point
-					$grp->set('name', 'Registered');
+					// TODO: UPDATE for 1.6+
+					// Contribution from Mark Snead via the forums
+					// @see http://forum.joomla.org/viewtopic.php?p=1811943#p1811943
+					// UPDATE SESSION ARRAY
+					$instance = $my;
+
+					// Get an ACL object
+					$acl = & JFactory::getACL();
+
+					// Get the newly updated user group from the ACL
+					if ($instance->get('tmp_user') == 1)
+					{
+						$grp = new JObject;
+						// This should be configurable at some point
+						$grp->set('name', 'Registered');
+					}
+					else
+					{
+						$grp = $acl->getAroGroup($instance->get('id'));
+					}
+
+					//Set the usertype and gid based on the ACL group name
+					$instance->set('usertype', $grp->name);
+					$instance->set('gid', $grp->id);
+
+					// Register the needed session variables
+					$session = & JFactory::getSession();
+					$session->set('user', $instance);
 				}
 				else
 				{
-					$grp = $acl->getAroGroup($instance->get('id'));
+					// Restore the original user back.
+					$my = $originalUser;
 				}
-
-				//Set the usertype and gid based on the ACL group name
-				$instance->set('usertype', $grp->name);
-				$instance->set('gid', $grp->id);
-
-				// Register the needed session variables
-				$session = & JFactory::getSession();
-				$session->set('user', $instance);
-
-				return true;    // thats all folks
-				break;
+				
+				// That's all folks.
+				return true;    
 			}
 		}
 		return false;
@@ -211,22 +233,31 @@ class JAuthUserSource extends JObservable
 	 */
 	function discoverUser($username)
 	{
+		if (empty($username))
+		{
+			throw new InvalidArgumentException('Username cannot be empty.');
+		}
+
 		// Load up User Source plugins
 		$plugins = JPluginHelper::getPlugin('usersource');
+
 		foreach ($plugins as $plugin)
 		{
 			$className = 'plg' . $plugin->type . $plugin->name;
+
 			if (class_exists($className))
 			{
 				$plugin = new $className($this, (array) $plugin);
 			}
 			else
 			{
-				JError :: raiseWarning('SOME_ERROR_CODE', 'JAuthUserSource::discoverUser: Could not load ' . $className);
+				JLog::add('JAuthUserSource::discoverUser: Could not load ' . $className, JLog::WARNING, 'usersource');
 				continue;
 			}
+
 			// Try to find user
 			$user = new JUser();
+
 			if (method_exists($plugin, 'getUser') && $plugin->getUser($username, $user))
 			{
 				return $user; //return the first user we find
@@ -234,7 +265,7 @@ class JAuthUserSource extends JObservable
 			}
 			else
 			{
-				JError::raiseNotice(1, 'Plugin ' . $className . ' failed to find user');
+				JLog::add(sprintf('Plugin "%s" failed to find user "%s"', $className, $username), JLog::NOTICE, 'usersource');
 			}
 		}
 	}
@@ -256,17 +287,19 @@ class JAuthUserSource extends JObservable
 		foreach ($plugins as $plugin)
 		{
 			$className = 'plg' . $plugin->type . $plugin->name;
+
 			if (class_exists($className))
 			{
 				$plugin = new $className($this, (array) $plugin);
 			}
 			else
 			{
-				JError :: raiseWarning('SOME_ERROR_CODE', 'JAuthUserSource::discoverUsers: Could not load ' . $className);
+				JLog::add('JAuthUserSource::discoverUsers: Could not load ' . $className, JLog::NOTICE, 'usersource');
 				continue;
 			}
 			// Try to find user
 			$user = new JUser();
+
 			if (method_exists($plugin, 'getUser') && $plugin->getUser($username, $user))
 			{
 				// clone the user before putting them into the array
@@ -274,5 +307,26 @@ class JAuthUserSource extends JObservable
 			}
 		}
 		return $users;
+	}
+}
+
+/**
+ * Mock user object to convince JUser to let us do what we want. Looks mostly authentic.
+ *
+ * @package     JAuthTools
+ * @subpackage  UserSource
+ */
+class SuperJUser extends JUser
+{
+	/**
+	 * Fake authorise method.
+	 *
+	 * @return  boolean  Returns true. Always.
+	 *
+	 * @since   2.5
+	 */
+	public function authorise()
+	{
+		return true;
 	}
 }
