@@ -45,6 +45,7 @@ class JAuthUserSource extends JObservable
 	{
 		// Import User Source Library Files
 		$isLoaded = JPluginHelper::importPlugin('usersource');
+
 		if (!$isLoaded)
 		{
 			JLog::add(__CLASS__ . '::__construct: Could not load User Source plugins.', JLog::ERROR, 'usersource');
@@ -90,12 +91,11 @@ class JAuthUserSource extends JObservable
 
 		if ($user)
 		{
-			$config = JFactory::getConfig();
-
 			// If the plugin didn't assign a group, set the default.
 			// Note: "Public" doesn't have access to login...
 			if (!isset($user->groups) || empty($user->groups) || !count($user->groups))
 			{
+				$config = JFactory::getConfig();
 				$user->groups = array($config->get('access', 1));
 			}
 
@@ -105,7 +105,7 @@ class JAuthUserSource extends JObservable
 			$session->set('user', new SuperJUser);
 
 			// save us, now the db is up
-			$result = $user->save();  
+			$result = $user->save();
 			if (!$result)
 			{
 				JLog::add(sprintf('User creation failed for %s: %s', $username, $user->getError()), JLog::ERROR, 'usersource');
@@ -156,16 +156,25 @@ class JAuthUserSource extends JObservable
 					continue;
 				}
 
-				// if we succeeded then lets bail out
-				// means the first system gets priority
-				// and no other system will overwrite the values
-				// but first we need to save our user
-				// get who we are now
-				$originalUser = clone(JFactory::getUser());
-				$my =& JFactory::getUser();
-				$my = new SuperJUser;
+				// If we succeeded in finding a user then we're done.
+				// The first user source to find the user wins in this case
+				// and no other system will overwrite the values.
+				// Now we need to save our user.
+				// Get who we are now.
+				$originalUser = JFactory::getUser();
+				$session = JFactory::getSession();
+				$session->set('user', new SuperJUser);
+
+				// If the plugin didn't assign a group, set the default.
+				// Note: "Public" doesn't have access to login...
+				if (!isset($user->groups) || empty($user->groups) || !count($user->groups))
+				{
+					$config = JFactory::getConfig();
+					$user->groups = array($config->get('access', 1));
+				}
 
 				// by default we demote users
+				// TODO: Need to work out what this means when you can be in more than one group...
 				/*
 				if (isset($options['demoteuser']) && !$options['demoteuser'])
 				{
@@ -180,45 +189,20 @@ class JAuthUserSource extends JObservable
 
 				if ($updateSession)
 				{
-					// TODO: UPDATE for 1.6+
-					// Contribution from Mark Snead via the forums
-					// @see http://forum.joomla.org/viewtopic.php?p=1811943#p1811943
-					// UPDATE SESSION ARRAY
-					$instance = $my;
-
-					// Get an ACL object
-					$acl = & JFactory::getACL();
-
-					// Get the newly updated user group from the ACL
-					if ($instance->get('tmp_user') == 1)
-					{
-						$grp = new JObject;
-						// This should be configurable at some point
-						$grp->set('name', 'Registered');
-					}
-					else
-					{
-						$grp = $acl->getAroGroup($instance->get('id'));
-					}
-
-					//Set the usertype and gid based on the ACL group name
-					$instance->set('usertype', $grp->name);
-					$instance->set('gid', $grp->id);
-
-					// Register the needed session variables
-					$session = & JFactory::getSession();
-					$session->set('user', $instance);
+					$session->set('user', $user);
 				}
 				else
 				{
 					// Restore the original user back.
-					$my = $originalUser;
+					$session->set('user', $originalUser);
 				}
-				
+
 				// That's all folks.
-				return true;    
+				return true;
 			}
 		}
+
+		// We didn't manage to synchronise the user.
 		return false;
 	}
 
@@ -260,8 +244,8 @@ class JAuthUserSource extends JObservable
 
 			if (method_exists($plugin, 'getUser') && $plugin->getUser($username, $user))
 			{
-				return $user; //return the first user we find
-				break;
+				// Return the first user we find.
+				return $user;
 			}
 			else
 			{
@@ -279,7 +263,7 @@ class JAuthUserSource extends JObservable
 	 *
 	 * @since   2.5.0
 	 */
-	function discoverUsers($username)
+	public function discoverUsers($username)
 	{
 		// Load up User Source plugins
 		$users = Array();
@@ -302,7 +286,7 @@ class JAuthUserSource extends JObservable
 
 			if (method_exists($plugin, 'getUser') && $plugin->getUser($username, $user))
 			{
-				// clone the user before putting them into the array
+				// Clone the user before putting them into the array.
 				$users[$plugin->name] = clone($user);
 			}
 		}
@@ -311,7 +295,7 @@ class JAuthUserSource extends JObservable
 }
 
 /**
- * Mock user object to convince JUser to let us do what we want. Looks mostly authentic.
+ * Super JUser object to convince JUser to let us do what we want. Looks mostly authentic.
  *
  * @package     JAuthTools
  * @subpackage  UserSource
